@@ -24,7 +24,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://ideathon.sugaam.in',
   withCredentials: true, // Crucial for sending and receiving HttpOnly cookies
 });
 
