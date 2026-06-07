@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+
+/* Add this to your CSS file or a <style> block */
+
+/* Target the autofill state */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+    /* Set the background color to match your input background */
+    -webkit-box-shadow: 0 0 0 30px #0B1020 inset !important;
+    /* Set the text color to white */
+    -webkit-text-fill-color: #ffffff !important;
+    /* Transition delay to prevent color flashing */
+    transition: background-color 5000s ease-in-out 0s;
+}
