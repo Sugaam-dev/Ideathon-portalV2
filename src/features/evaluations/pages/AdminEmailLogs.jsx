@@ -1,10 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAdminEmailLogs } from '../../ideas/api/ideasApi';
 import { formatDate } from '../../../utils/formatters';
-import { ArrowLeft, Search, Mail, AlertCircle, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, AlertCircle, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 export default function AdminEmailLogs() {
-  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -24,22 +22,7 @@ export default function AdminEmailLogs() {
     setPage(1);
   };
   return (
-    <div className="w-full max-w-7xl mx-auto px-6 py-8 flex-1 space-y-6">
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <button 
-            onClick={() => navigate('/admin')} 
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors mb-2"
-          >
-            <ArrowLeft size={14} /> Back to Suite
-          </button>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <Mail className="text-indigo-600" size={24} /> System Email Dispatch Audits
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">Review SMTP rotation history, deliverability tracking, and connection failover logs.</p>
-        </div>
-      </div>
+    <div className="space-y-6">
       {/* Filter controls */}
       <div className="bg-white border rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center gap-3">
         <div className="relative flex-1 w-full">

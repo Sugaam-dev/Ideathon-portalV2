@@ -4,6 +4,7 @@ import { useAdminStats, useAdminPool, useAdminUsers } from '../../ideas/api/idea
 import { formatDate } from '../../../utils/formatters';
 import { CATEGORIES } from '../../../config/constants';
 import AdminUserDetailModal from './AdminUserDetailModal';
+import AdminEmailLogs from './AdminEmailLogs';
 import { 
   Search, BarChart3, Users, Lightbulb, CheckCircle2, ShieldAlert, 
   Layers, UserCheck, Shield, Award, Mail
@@ -17,7 +18,7 @@ const STATUS_MAP = {
   'Closed': 'badge-closed'
 };
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('submissions'); // 'submissions' | 'users'
+  const [activeTab, setActiveTab] = useState('submissions'); // 'submissions' | 'users' | 'email-logs'
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [category, setCategory] = useState('');
@@ -73,14 +74,15 @@ export default function AdminDashboard() {
             >
               <UserCheck size={14} /> User Accounts
             </button>
+            <button 
+              onClick={() => handleTabChange('email-logs')}
+              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+                activeTab === 'email-logs' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <Mail size={14} /> Email Logs
+            </button>
           </div>
-          {/* Standalone Email Logs Page Link */}
-          <Link 
-            to="/admin/email-logs"
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition-all shrink-0"
-          >
-            <Mail size={14} /> View Email Logs
-          </Link>
         </div>
       </div>
       {/* Analytics Summary Panels */}
@@ -106,33 +108,35 @@ export default function AdminDashboard() {
         )}
       </div>
       {/* Filters */}
-      <div className="bg-white border rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center gap-3">
-        <div className="relative flex-1 w-full">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input 
-            type="text" 
-            className="form-input pl-9 w-full" 
-            placeholder={activeTab === 'submissions' ? "Search by title, submitter name, or email..." : "Search users by name or email..."} 
-            value={search} 
-            onChange={e => setSearch(e.target.value)} 
-          />
+      {activeTab !== 'email-logs' && (
+        <div className="bg-white border rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center gap-3">
+          <div className="relative flex-1 w-full">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              className="form-input pl-9 w-full" 
+              placeholder={activeTab === 'submissions' ? "Search by title, submitter name, or email..." : "Search users by name or email..."} 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+            />
+          </div>
+          {activeTab === 'submissions' && (
+            <>
+              <select className="form-select md:w-44" value={status} onChange={e => setStatus(e.target.value)}>
+                <option value="">All Statuses</option>
+                <option value="Submitted">Submitted</option>
+                <option value="Under Review">Under Review</option>
+                <option value="Shortlisted">Shortlisted</option>
+                <option value="Selected">Selected</option>
+              </select>
+              <select className="form-select md:w-44" value={category} onChange={e => setCategory(e.target.value)}>
+                <option value="">All Categories</option>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </>
+          )}
         </div>
-        {activeTab === 'submissions' && (
-          <>
-            <select className="form-select md:w-44" value={status} onChange={e => setStatus(e.target.value)}>
-              <option value="">All Statuses</option>
-              <option value="Submitted">Submitted</option>
-              <option value="Under Review">Under Review</option>
-              <option value="Shortlisted">Shortlisted</option>
-              <option value="Selected">Selected</option>
-            </select>
-            <select className="form-select md:w-44" value={category} onChange={e => setCategory(e.target.value)}>
-              <option value="">All Categories</option>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </>
-        )}
-      </div>
+      )}
       {/* VIEW PANEL ROUTER (TABS) */}
       {activeTab === 'submissions' ? (
         /* =======================================
@@ -183,7 +187,7 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
-      ) : (
+      ) : activeTab === 'users' ? (
         /* =======================================
            USER ACCOUNTS TABLE (AUDIT USERS)
            ======================================= */
@@ -249,6 +253,11 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+      ) : (
+        /* =======================================
+           EMAIL DISPATCH LOGS
+           ======================================= */
+        <AdminEmailLogs />
       )}
       {/* Audit Modal Overlay */}
       {selectedUserId && (

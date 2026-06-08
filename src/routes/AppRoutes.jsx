@@ -22,7 +22,7 @@ import AdminIdeaDetail from '../features/evaluations/pages/AdminIdeaDetail';
 import GoogleCallback from '../features/auth/pages/GoogleCallback';
 import ChangePassword from '../features/auth/pages/ChangePassword';
 // 🔥 NEW: Audited Email Dispatch Logs page component
-import AdminEmailLogs from '../features/evaluations/pages/AdminEmailLogs';
+
 export default function AppRoutes() {
   const dispatch = useDispatch();
   const { loading: authLoading } = useSelector((state) => state.auth);
@@ -123,15 +123,7 @@ export default function AppRoutes() {
               </AdminRoute>
             }
           />
-          {/* 🔥 NEW: Standalone Route for Auditing Email Dispatch Logs */}
-          <Route
-            path="/admin/email-logs"
-            element={
-              <AdminRoute>
-                <AdminEmailLogs />
-              </AdminRoute>
-            }
-          />
+      
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
