@@ -5,7 +5,6 @@ import { formatDate } from '../../../utils/formatters';
 import { 
   X, Mail, Phone, Building2, Briefcase, Link2, FileText, Download, Loader2, ExternalLink 
 } from 'lucide-react';
-
 function UserInfoRow({ icon: Icon, label, value, isLink = false }) {
   if (!value) return null;
   return (
@@ -26,11 +25,9 @@ function UserInfoRow({ icon: Icon, label, value, isLink = false }) {
     </div>
   );
 }
-
 export default function AdminUserDetailModal({ userId, onClose }) {
   const { data: userDetails, isLoading, error } = useAdminUserDetails(userId);
   const { mutateAsync: downloadResume, isPending: isDownloading } = useDownloadUserResume();
-
   const handleDownload = async () => {
     if (!userDetails || !userDetails.resume_filename) return;
     try {
@@ -39,9 +36,7 @@ export default function AdminUserDetailModal({ userId, onClose }) {
       alert("Failed to download user's resume.");
     }
   };
-
   if (!userId) return null;
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
       <div className="w-full max-w-4xl bg-[#0E1424] border border-[#1F2A44] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
@@ -58,7 +53,6 @@ export default function AdminUserDetailModal({ userId, onClose }) {
             <X size={18} />
           </button>
         </div>
-
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
           {isLoading ? (
@@ -87,7 +81,6 @@ export default function AdminUserDetailModal({ userId, onClose }) {
                     )}
                   </div>
                 </div>
-
                 {/* Right Resume Panel */}
                 <div className="space-y-4">
                   <h3 className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest border-b border-cyan-500/10 pb-2">Resume Record</h3>
@@ -103,7 +96,6 @@ export default function AdminUserDetailModal({ userId, onClose }) {
                         </div>
                       </div>
                     </div>
-
                     {userDetails.has_resume ? (
                       <button 
                         onClick={handleDownload}
@@ -128,7 +120,6 @@ export default function AdminUserDetailModal({ userId, onClose }) {
                   </div>
                 </div>
               </div>
-
               {/* Submissions List */}
               <div className="space-y-4 pt-2">
                 <h3 className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest border-b border-cyan-500/10 pb-2">

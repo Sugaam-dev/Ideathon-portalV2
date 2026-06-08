@@ -312,17 +312,26 @@ export default function AdminIdeaDetail() {
           </div>
         </div>
         
-        {user?.role === ROLES.ADMIN && (
-          <div className="bg-white border rounded-2xl p-5 shadow-sm space-y-3">
-            <h3 className="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5"><Shield size={14}/> Overrides</h3>
-            <select className="form-select w-full" value={currentIdea.status} onChange={e => updateStatus({ id: currentIdea.id, status: e.target.value })} disabled={isSavingStatus}>
-              <option value="Submitted">Submitted</option>
-              <option value="Under Review">Under Review</option>
-              <option value="Shortlisted">Shortlisted</option>
-              <option value="Selected">Selected</option>
-            </select>
-          </div>
-        )}
+       {user?.role === ROLES.ADMIN && (
+  <div className="bg-white border rounded-2xl p-5 shadow-sm space-y-3">
+    <h3 className="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5"><Shield size={14}/> Overrides</h3>
+    <select 
+      className="form-select w-full" 
+      value={currentIdea.status} 
+      onChange={e => updateStatus({ id: currentIdea.id, status: e.target.value })} 
+      disabled={isSavingStatus}
+    >
+      <option value="Submitted">Submitted</option>
+      <option value="Under Review">Under Review</option>
+      <option value="Shortlisted">Shortlisted</option>
+      <option value="Interview Scheduled">Interview Scheduled</option>
+      <option value="Selected">Selected</option>
+      <option value="Winner">Winner</option>
+      <option value="Incubation Phase">Incubation Phase</option>
+      <option value="Closed">Closed</option>
+    </select>
+  </div>
+)}
 
         <div className="bg-white border rounded-2xl p-5 shadow-sm space-y-3">
           <h3 className="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5"><FileText size={14}/> Attachments</h3>

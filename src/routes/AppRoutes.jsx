@@ -1,16 +1,13 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-
 // Auth bootstrap
 import { getMyProfile } from '../features/auth/store/authThunks';
-
 // Structural Route Layers
 import BaseLayout from '../components/layout/BaseLayout';
 import ProtectedRoute from './ProtectedRoute';
 import AdminRoute from './AdminRoute';
 import GuestRoute from './GuestRoute';
-
 // Pages
 import Landing from '../features/ideas/pages/Landing';
 import Login from '../features/auth/pages/Login';
@@ -24,16 +21,15 @@ import AdminDashboard from '../features/evaluations/pages/AdminDashboard';
 import AdminIdeaDetail from '../features/evaluations/pages/AdminIdeaDetail';
 import GoogleCallback from '../features/auth/pages/GoogleCallback';
 import ChangePassword from '../features/auth/pages/ChangePassword';
-
+// 🔥 NEW: Audited Email Dispatch Logs page component
+import AdminEmailLogs from '../features/evaluations/pages/AdminEmailLogs';
 export default function AppRoutes() {
   const dispatch = useDispatch();
   const { loading: authLoading } = useSelector((state) => state.auth);
-
   // ✅ CRITICAL FIX: Restore session on refresh
   useEffect(() => {
     dispatch(getMyProfile());
   }, [dispatch]);
-
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -41,15 +37,12 @@ export default function AppRoutes() {
       </div>
     );
   }
-
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/google-callback" element={<GoogleCallback />} />
-
         <Route element={<BaseLayout />}>
           <Route path="/" element={<Landing />} />
-
           <Route
             path="/login"
             element={
@@ -58,7 +51,6 @@ export default function AppRoutes() {
               </GuestRoute>
             }
           />
-
           <Route
             path="/register"
             element={
@@ -67,7 +59,6 @@ export default function AppRoutes() {
               </GuestRoute>
             }
           />
-
           <Route
             path="/forgot-password"
             element={
@@ -76,7 +67,6 @@ export default function AppRoutes() {
               </GuestRoute>
             }
           />
-
           <Route
             path="/dashboard"
             element={
@@ -85,7 +75,6 @@ export default function AppRoutes() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/submit"
             element={
@@ -94,7 +83,6 @@ export default function AppRoutes() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/account"
             element={
@@ -104,14 +92,13 @@ export default function AppRoutes() {
             }
           />
           <Route
-  path="/change-password"
-  element={
-    <ProtectedRoute>
-      <ChangePassword/>
-    </ProtectedRoute>
-  }
-/>
-
+            path="/change-password"
+            element={
+              <ProtectedRoute>
+                <ChangePassword/>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/ideas/:id"
             element={
@@ -120,7 +107,6 @@ export default function AppRoutes() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/admin"
             element={
@@ -129,7 +115,6 @@ export default function AppRoutes() {
               </AdminRoute>
             }
           />
-
           <Route
             path="/admin/ideas/:id"
             element={
@@ -138,8 +123,16 @@ export default function AppRoutes() {
               </AdminRoute>
             }
           />
+          {/* 🔥 NEW: Standalone Route for Auditing Email Dispatch Logs */}
+          <Route
+            path="/admin/email-logs"
+            element={
+              <AdminRoute>
+                <AdminEmailLogs />
+              </AdminRoute>
+            }
+          />
         </Route>
-
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
