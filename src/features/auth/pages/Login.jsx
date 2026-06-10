@@ -225,8 +225,9 @@ export default function Login() {
           {/* GOOGLE LOGIN */}
           <button
             type="button"
+            disabled={authLoading}
             onClick={() => dispatch(initiateGoogleOAuth())}
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-[#24304A] rounded-xl bg-[#0B1020] text-sm font-semibold text-slate-200 hover:border-cyan-400 hover:text-cyan-300 transition"
+            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-[#24304A] rounded-xl bg-[#0B1020] text-sm font-semibold text-slate-200 hover:border-cyan-400 hover:text-cyan-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {/* Google Icon */}
             <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -235,7 +236,7 @@ export default function Login() {
               <path fill="#FBBC05" d="M5.266 14.235L1.22 17.427A11.944 11.944 0 0 1 0 12c0-1.95.464-3.791 1.22-5.427l4.046 3.192a7.03 7.03 0 0 0-.527 2.235c0 .786.132 1.54.373 2.235z"/>
               <path fill="#34A853" d="M12 24c3.245 0 5.973-1.077 7.964-2.927l-3.691-2.864a7.124 7.124 0 0 1-4.273 1.2A7.077 7.077 0 0 1 5.266 14.235L1.22 17.427C3.23 21.327 7.27 24 12 24z"/>
             </svg>
-            Sign in with Google
+            {authLoading ? "Initializing security token..." : "Sign in with Google"}
           </button>
 
           {/* DIVIDER */}

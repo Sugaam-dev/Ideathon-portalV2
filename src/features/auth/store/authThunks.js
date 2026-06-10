@@ -82,20 +82,42 @@ export const loginUser = (credentials, navigate) => async (dispatch) => {
     dispatch(setAuthLoading(false));
   }
 };
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
-export const initiateGoogleOAuth = () => async () => {
+export const initiateGoogleOAuth = () => async (dispatch) => {
+  dispatch(setAuthLoading(true));
   try {
     // 1. Generate a secure random state key
-    const secureState = crypto.randomUUID();
+    const secureState = generateUUID();
     
-    // 2. Save it in sessionStorage for CSRF validation on redirect
+    // 2. Save it in sessionStorage and cookie for CSRF validation on redirect
     sessionStorage.setItem("oauth_state", secureState);
+    
+    let cookieString = `oauth_state=${secureState}; path=/; max-age=300; SameSite=Lax; Secure`;
+    if (window.location.hostname.endsWith("pmrgsolution.com")) {
+      cookieString += "; domain=.pmrgsolution.com";
+    }
+    document.cookie = cookieString;
     
     // 3. Request Google redirect link passing the state key
     const res = await apiClient.get('/api/auth/google/login', { params: { state: secureState } });
-    if (res.data?.auth_url) window.location.href = res.data.auth_url;
+    if (res.data?.auth_url) {
+      window.location.href = res.data.auth_url;
+    } else {
+      throw new Error("Missing auth_url in response");
+    }
   } catch (err) {
     toast.error('Failed to initialize Google OAuth.');
+    dispatch(setAuthLoading(false));
   }
 };
 

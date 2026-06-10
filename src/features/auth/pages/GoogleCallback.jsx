@@ -13,15 +13,24 @@ export default function GoogleCallback() {
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     
-    // 1. Retrieve the saved state key
-    const savedState = sessionStorage.getItem("oauth_state");
+    // 1. Retrieve the saved state key from sessionStorage or fallback cookie
+    const savedState = sessionStorage.getItem("oauth_state") || document.cookie
+      .split(';')
+      .find(row => row.trim().startsWith('oauth_state='))
+      ?.split('=')[1];
+
+    console.log("Google callback state verification:", { urlState: state, savedState });
 
     // 2. Verify state matches to prevent OAuth CSRF hijacking
     if (code && state && savedState && savedState === state) {
-      sessionStorage.removeItem("oauth_state"); // Clear storage
+      // Clear both storage and cookie
+      sessionStorage.removeItem("oauth_state");
+      document.cookie = "oauth_state=; path=/; max-age=0; SameSite=Lax; Secure" + 
+        (window.location.hostname.endsWith("pmrgsolution.com") ? "; domain=.pmrgsolution.com" : "");
+      
       dispatch(processGoogleCallbackThunk(code));
     } else {
-      console.error("CSRF Validation failed. Token mismatch!");
+      console.error("CSRF Validation failed. Token mismatch!", { urlState: state, savedState });
       alert("Security handshake failed. Please try logging in again.");
       navigate('/login', { replace: true });
     }
