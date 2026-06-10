@@ -122,7 +122,7 @@ export const initiateGoogleOAuth = () => async (dispatch) => {
 };
 
 export const processGoogleCallbackThunk = (code) => async (dispatch) => {
-  dispatch(setLoading(true));
+  dispatch(setAuthLoading(true));
   try {
     // Callback doesn't require backend state checks anymore
     const res = await apiClient.get('/api/auth/google/callback', { params: { code } });
@@ -132,7 +132,7 @@ export const processGoogleCallbackThunk = (code) => async (dispatch) => {
     toast.error('Google authorization failed.');
     dispatch(setUser(null));
   } finally {
-    dispatch(setLoading(false));
+    dispatch(setAuthLoading(false));
   }
 };
 
