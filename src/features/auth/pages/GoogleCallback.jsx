@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { processGoogleCallbackThunk } from '../store/authThunks';
@@ -8,12 +8,19 @@ export default function GoogleCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useSelector((state) => state.auth);
+  const processedRef = useRef(false);
 
   useEffect(() => {
+    // Prevent double execution in React StrictMode
+    if (processedRef.current) return;
+
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     
-    // 1. Retrieve the saved state key from sessionStorage or fallback cookie
+    // Wait until code and state parameters are present
+    if (!code || !state) return;
+
+    // Retrieve the saved state key from sessionStorage or fallback cookie
     const savedState = sessionStorage.getItem("oauth_state") || document.cookie
       .split(';')
       .find(row => row.trim().startsWith('oauth_state='))
@@ -21,8 +28,10 @@ export default function GoogleCallback() {
 
     console.log("Google callback state verification:", { urlState: state, savedState });
 
+    processedRef.current = true;
+
     // 2. Verify state matches to prevent OAuth CSRF hijacking
-    if (code && state && savedState && savedState === state) {
+    if (savedState && savedState === state) {
       // Clear both storage and cookie
       sessionStorage.removeItem("oauth_state");
       document.cookie = "oauth_state=; path=/; max-age=0; SameSite=Lax; Secure" + 
