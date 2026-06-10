@@ -1,148 +1,3 @@
-// import { apiClient } from '../../../services/apiClient';
-// import { 
-//   setUser, 
-//   setLoading, 
-//   setAuthLoading, 
-//   setRegistrationStep, 
-//   setForgotPasswordStep, 
-//   setRegisteredEmail,
-//   setRecoveryEmail,
-//   purgeSession 
-// } from './authSlice';
-// import toast from 'react-hot-toast';
-
-// // Helper to extract error message safely
-// const getErrMsg = (err) => err?.response?.data?.message || err?.message || 'An unexpected error occurred';
-
-// export const getMyProfile = () => async (dispatch) => {
-//   try {
-//     const res = await apiClient.get('/api/auth/me');
-//     dispatch(setUser(res.data));
-//   } catch (err) {
-//     dispatch(setUser(null));
-//   } finally {
-//     dispatch(setLoading(false));
-//   }
-// };
-
-// export const registerUser = (formData) => async (dispatch) => {
-//   dispatch(setAuthLoading(true));
-//   try {
-//     await apiClient.post('/api/auth/register', formData);
-//     toast.success('Verification code dispatched!');
-//     dispatch(setRegisteredEmail(formData.email));
-//     dispatch(setRegistrationStep('otp'));
-//   } catch (err) {
-//     toast.error(getErrMsg(err));
-//   } finally {
-//     dispatch(setAuthLoading(false));
-//   }
-// };
-
-// export const verifyRegistrationOtp = (email, otpCode) => async (dispatch) => {
-//   dispatch(setAuthLoading(true));
-//   try {
-//     const res = await apiClient.post('/api/auth/verify-otp', { email, otp_code: otpCode });
-//     toast.success('Account fully activated!');
-//     dispatch(setUser(res.data));
-//   } catch (err) {
-//     toast.error(getErrMsg(err));
-//   } finally {
-//     dispatch(setAuthLoading(false));
-//   }
-// };
-
-// export const loginUser = (credentials, navigate) => async (dispatch) => {
-//   dispatch(setAuthLoading(true));
-//   try {
-//     const res = await apiClient.post('/api/auth/login', credentials);
-//     toast.success(`Welcome back, ${res.data.name}!`);
-//     dispatch(setUser(res.data));
-//     // console.log(res.data)
-//     navigate(res.data.role === 'ADMIN' || res.data.role === 'JURY' ? '/admin' : '/dashboard', { replace: true });
-//   } catch (err) {
-//     toast.error(getErrMsg(err));
-//   } finally {
-//     dispatch(setAuthLoading(false));
-//   }
-// };
-
-// export const initiateGoogleOAuth = () => async () => {
-//   try {
-//     const res = await apiClient.get('/api/auth/google/login');
-//     if (res.data?.auth_url) window.location.href = res.data.auth_url;
-//   } catch (err) {
-//     toast.error('Failed to initialize Google OAuth.');
-//   }
-// };
-
-// export const processGoogleCallbackThunk = (code, state) => async (dispatch) => {
-//   dispatch(setLoading(true));
-//   try {
-//     const res = await apiClient.post('/api/auth/google/callback', { code, state });
-//     toast.success(`Welcome, ${res.data.name}!`);
-//     dispatch(setUser(res.data));
-//   } catch (err) {
-//     toast.error('Google authorization failed.');
-//     dispatch(setUser(null));
-//   } finally {
-//     dispatch(setLoading(false));
-//   }
-// };
-
-// export const forgotPasswordThunk = (email) => async (dispatch) => {
-//   dispatch(setAuthLoading(true));
-//   try {
-//     const res = await apiClient.post('/api/auth/forgot-password', { email });
-//     toast.success(res.data.message || 'Recovery code dispatched.');
-//     dispatch(setRecoveryEmail(email));
-//     dispatch(setForgotPasswordStep('otp'));
-//   } catch (err) {
-//     toast.error(getErrMsg(err));
-//   } finally {
-//     dispatch(setAuthLoading(false));
-//   }
-// };
-
-// export const resetPasswordThunk = (payload) => async (dispatch) => {
-//   dispatch(setAuthLoading(true));
-//   try {
-//     await apiClient.post('/api/auth/reset-password', payload);
-//     toast.success('Password updated!');
-//     dispatch(setForgotPasswordStep('done'));
-//   } catch (err) {
-//     toast.error(getErrMsg(err));
-//   } finally {
-//     dispatch(setAuthLoading(false));
-//   }
-// };
-
-// export const logoutUser = (navigate) => async (dispatch) => {
-//   try {
-//     await apiClient.post('/api/auth/logout');
-//     dispatch(purgeSession());
-//     toast.success('Logged out.');
-//     navigate('/', { replace: true });
-//   } catch (err) {
-//     toast.error('Logout failed.');
-//     // Force purge even on server error to clear local state
-//     dispatch(purgeSession()); 
-//   }
-// };
-
-// export const changePasswordThunk = (payload, navigate) => async (dispatch) => {
-//   dispatch(setAuthLoading(true));
-//   try {
-//     await apiClient.put('/api/auth/change-password', payload);
-//     toast.success('Password updated successfully!');
-//     navigate('/account'); // Navigate back to account page after success
-//   } catch (err) {
-//     toast.error(getErrMsg(err));
-//   } finally {
-//     dispatch(setAuthLoading(false));
-//   }
-// };
-
 import { apiClient } from '../../../services/apiClient';
 import { 
   setUser, 
@@ -155,6 +10,7 @@ import {
   purgeSession 
 } from './authSlice';
 import toast from 'react-hot-toast';
+import localforage from 'localforage';
 
 // Helper to extract error message safely (Aligned with FastAPI .detail return structure)
 const getErrMsg = (err) => err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'An unexpected error occurred';
@@ -229,17 +85,25 @@ export const loginUser = (credentials, navigate) => async (dispatch) => {
 
 export const initiateGoogleOAuth = () => async () => {
   try {
-    const res = await apiClient.get('/api/auth/google/login');
+    // 1. Generate a secure random state key
+    const secureState = crypto.randomUUID();
+    
+    // 2. Save it in sessionStorage for CSRF validation on redirect
+    sessionStorage.setItem("oauth_state", secureState);
+    
+    // 3. Request Google redirect link passing the state key
+    const res = await apiClient.get('/api/auth/google/login', { params: { state: secureState } });
     if (res.data?.auth_url) window.location.href = res.data.auth_url;
   } catch (err) {
     toast.error('Failed to initialize Google OAuth.');
   }
 };
 
-export const processGoogleCallbackThunk = (code, state) => async (dispatch) => {
+export const processGoogleCallbackThunk = (code) => async (dispatch) => {
   dispatch(setLoading(true));
   try {
-    const res = await apiClient.get('/api/auth/google/callback', { params: { code, state } });
+    // Callback doesn't require backend state checks anymore
+    const res = await apiClient.get('/api/auth/google/callback', { params: { code } });
     toast.success(`Welcome, ${res.data.name}!`);
     dispatch(setUser(res.data));
   } catch (err) {
@@ -309,12 +173,26 @@ export const resetPasswordThunk = (payload) => async (dispatch) => {
 export const logoutUser = (navigate) => async (dispatch) => {
   try {
     await apiClient.post('/api/auth/logout');
+  } catch (err) {
+    // Ignore network failure to ensure frontend is logged out
+  } finally {
     dispatch(purgeSession());
+    
+    // Clear all draft form states and files
+    sessionStorage.removeItem("idea_currentStep");
+    sessionStorage.removeItem("idea_acceptedTerms");
+    sessionStorage.removeItem("idea_formData");
+    sessionStorage.removeItem("register_form");
+    
+    try {
+      await localforage.removeItem("idea_files");
+      await localforage.removeItem("register_resume");
+    } catch (lfErr) {
+      console.error("Failed to clean up files on logout", lfErr);
+    }
+
     toast.success('Logged out.');
     navigate('/', { replace: true });
-  } catch (err) {
-    toast.error('Logout failed.');
-    dispatch(purgeSession()); 
   }
 };
 
@@ -324,6 +202,37 @@ export const changePasswordThunk = (payload, navigate) => async (dispatch) => {
     await apiClient.put('/api/auth/change-password', payload);
     toast.success('Password updated successfully!');
     navigate('/account');
+  } catch (err) {
+    toast.error(getErrMsg(err));
+  } finally {
+    dispatch(setAuthLoading(false));
+  }
+};
+
+export const resendRegistrationOtpThunk = (email) => async (dispatch) => {
+  try {
+    const res = await apiClient.post('/api/auth/register/resend-otp', { email });
+    toast.success(res.data.message || 'A new verification code has been sent.');
+  } catch (err) {
+    toast.error(getErrMsg(err));
+  }
+};
+
+export const resendRecoveryOtpThunk = (email) => async (dispatch) => {
+  try {
+    const res = await apiClient.post('/api/auth/forgot-password/resend-otp', { email });
+    toast.success(res.data.message || 'A new recovery code has been sent.');
+  } catch (err) {
+    toast.error(getErrMsg(err));
+  }
+};
+
+export const verifyRecoveryOtpThunk = (email, otpCode) => async (dispatch) => {
+  dispatch(setAuthLoading(true));
+  try {
+    await apiClient.post('/api/auth/forgot-password/verify-otp', { email, otp_code: otpCode });
+    toast.success('Recovery code verified.');
+    dispatch(setForgotPasswordStep('reset'));
   } catch (err) {
     toast.error(getErrMsg(err));
   } finally {

@@ -1,13 +1,10 @@
-
-
-
-
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { registerUser, verifyRegistrationOtp } from "../store/authThunks";
+import { registerUser, verifyRegistrationOtp, resendRegistrationOtpThunk } from "../store/authThunks";
+import { setRegistrationStep } from "../store/authSlice";
 import { Loader2, ShieldCheck, Sparkles, Eye, EyeOff } from "lucide-react";
-
+import localforage from "localforage";
 const CompactInput = ({ label, error, maxLength, showToggle, onToggle, isToggled, ...props }) => (
   <div className="relative pt-4 group">
     <input
@@ -36,40 +33,105 @@ const CompactInput = ({ label, error, maxLength, showToggle, onToggle, isToggled
     )}
   </div>
 );
-
 export default function Register() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { registrationStep, authLoading, registeredEmail } = useSelector(
+  const { registrationStep, authLoading, registeredEmail, user } = useSelector(
     (state) => state.auth,
   );
-
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    organization: "",
-    internship_id: "",
-    department: "",
-    linkedin: "",
-    password: "",
-    confirm: "",
+  const [form, setForm] = useState(() => {
+    const saved = sessionStorage.getItem("register_form");
+    return saved ? JSON.parse(saved) : {
+      name: "",
+      email: "",
+      phone: "",
+      organization: "",
+      internship_id: "",
+      department: "",
+      linkedin: "",
+      password: "",
+      confirm: "",
+    };
   });
   const [errors, setErrors] = useState({});
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const otpRefs = useRef([]);
-
   // Password visibility states
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-
   // Resume file state
   const [resumeFile, setResumeFile] = useState(null);
 
+  const [initialResumeLoadDone, setInitialResumeLoadDone] = useState(false);
+
+  // Sync form state to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem("register_form", JSON.stringify(form));
+  }, [form]);
+
+  // Sync resumeFile to localforage
+  useEffect(() => {
+    if (!initialResumeLoadDone) return;
+    if (resumeFile) {
+      localforage.setItem("register_resume", resumeFile);
+    } else {
+      localforage.removeItem("register_resume");
+    }
+  }, [resumeFile, initialResumeLoadDone]);
+
+  // Load saved resume on mount
+  useEffect(() => {
+    const loadSavedResume = async () => {
+      // If there's no active form in sessionStorage, it's a fresh tab session. Clear orphaned files.
+      const hasSession = sessionStorage.getItem("register_form");
+      if (!hasSession) {
+        await localforage.removeItem("register_resume");
+        setInitialResumeLoadDone(true);
+        return;
+      }
+
+      const savedResume = await localforage.getItem("register_resume");
+      if (savedResume) {
+        setResumeFile(savedResume);
+      }
+      setInitialResumeLoadDone(true);
+    };
+    loadSavedResume();
+  }, []);
+
+  // Cleanup registration session on successful registration/login
+  useEffect(() => {
+    if (user) {
+      sessionStorage.removeItem("register_form");
+      localforage.removeItem("register_resume");
+      sessionStorage.removeItem("registrationStep");
+      sessionStorage.removeItem("registeredEmail");
+    }
+  }, [user]);
+
+  // OTP Resend Timer Logic
+  const [resendTimer, setResendTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  useEffect(() => {
+    let interval;
+    if (registrationStep === "otp" && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (resendTimer === 0) {
+      setCanResend(true);
+    }
+    return () => clearInterval(interval);
+  }, [registrationStep, resendTimer]);
+  const handleResendOtp = () => {
+    if (!canResend) return;
+    dispatch(resendRegistrationOtpThunk(registeredEmail));
+    setResendTimer(60);
+    setCanResend(false);
+  };
   const validateField = (name, value) => {
     const optionalFields = ["organization", "internship_id", "department", "linkedin"];
     if (optionalFields.includes(name) && !value.trim()) return "";
-
     let error = "";
     if (name === "name" && !value.trim()) error = "Full name is required";
     if (name === "email" && !/\S+@\S+\.\S+/.test(value)) error = "Invalid email";
@@ -87,19 +149,16 @@ export default function Register() {
       
     return error;
   };
-
   const handleBlur = (e) => {
     const { name, value } = e.target;
     setErrors({ ...errors, [name]: validateField(name, value) });
   };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     const newErrors = {};
     Object.keys(form).forEach(
       (key) => (newErrors[key] = validateField(key, form[key])),
     );
-
     if (Object.values(newErrors).every((err) => err === "")) {
       // Build FormData payload for file upload support
       const formData = new FormData();
@@ -112,20 +171,17 @@ export default function Register() {
       if (form.department.trim()) formData.append("department", form.department.trim());
       if (form.linkedin.trim()) formData.append("linkedin", form.linkedin.trim());
       if (resumeFile) formData.append("resume", resumeFile);
-
       dispatch(registerUser(formData));
     } else {
       setErrors(newErrors);
     }
   };
-
   return (
     <div className="min-h-screen bg-[#152244] text-white flex items-center justify-center p-4 sm:p-6">
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-5%] left-[-5%] w-[35vw] h-[35vw] max-w-[400px] max-h-[400px] bg-cyan-500 rounded-full blur-[100px] opacity-10" />
         <div className="absolute bottom-[-5%] right-[-5%] w-[35vw] h-[35vw] max-w-[400px] max-h-[400px] bg-violet-600 rounded-full blur-[100px] opacity-10" />
       </div>
-
       <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center z-10">
         <div className="hidden lg:block space-y-6">
           <div className="flex items-center gap-3">
@@ -140,12 +196,22 @@ export default function Register() {
             security.
           </p>
         </div>
-
         <div className="bg-[#0E1424]/90 backdrop-blur-xl p-6 sm:p-10 rounded-[2rem] border border-[#1F2A44] shadow-2xl">
           {registrationStep === "otp" ? (
             <div className="space-y-6 text-center">
               <ShieldCheck className="mx-auto text-cyan-400" size={48} />
               <h2 className="text-xl font-bold">Verification Required</h2>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                A 6-digit verification code has been dispatched to <span className="text-cyan-400 font-semibold">{registeredEmail}</span>. 
+                {" "}(<button 
+                  type="button"
+                  onClick={() => dispatch(setRegistrationStep("form"))} 
+                  className="text-cyan-400 hover:text-cyan-300 underline font-semibold cursor-pointer"
+                >
+                  Edit
+                </button>). 
+                Please enter it below to activate your account. The code remains valid for 5 minutes.
+              </p>
               <div className="flex justify-center gap-2">
                 {otp.map((v, i) => (
                   <input
@@ -163,6 +229,20 @@ export default function Register() {
                     className="w-10 h-12 sm:w-12 sm:h-14 bg-[#0B1020] border border-[#24304A] text-center text-xl font-bold rounded-xl outline-none focus:border-cyan-400"
                   />
                 ))}
+              </div>
+              <div className="text-xs pt-1">
+                <button
+                  type="button"
+                  disabled={!canResend}
+                  onClick={handleResendOtp}
+                  className={`font-semibold transition-all ${
+                    canResend 
+                      ? "text-cyan-400 hover:text-cyan-300 underline cursor-pointer" 
+                      : "text-slate-500 cursor-not-allowed"
+                  }`}
+                >
+                  {canResend ? "Resend Verification Code" : `Resend code in ${resendTimer}s`}
+                </button>
               </div>
               <button
                 onClick={() =>

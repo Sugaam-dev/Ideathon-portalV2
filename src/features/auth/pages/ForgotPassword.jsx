@@ -1,120 +1,48 @@
-// import React, { useState } from 'react';
-// import { useDispatch, useSelector } from 'react-redux';
-// import { useNavigate, Link } from 'react-router-dom';
-// import { forgotPasswordThunk, resetPasswordThunk } from '../store/authThunks';
-// import { setForgotPasswordStep } from '../store/authSlice';
-// import { ArrowLeft, Mail, KeyRound, CheckCircle, Lock } from 'lucide-react';
-
-// export default function ForgotPassword() {
-//   const dispatch = useDispatch();
-//   const navigate = useNavigate();
-//   const { forgotPasswordStep, authLoading, recoveryEmail } = useSelector((state) => state.auth);
-
-//   const [email, setEmail] = useState('');
-//   const [otp, setOtp] = useState('');
-//   const [password, setPassword] = useState('');
-
-//   const renderContent = () => {
-//     // 1. EMAIL STEP
-//     if (forgotPasswordStep === 'email') {
-//       return (
-//         <form onSubmit={(e) => { e.preventDefault(); dispatch(forgotPasswordThunk(email)); }} className="space-y-4">
-//           <div className="relative">
-//             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-//             <input type="email" required placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)}
-//               className="w-full pl-10 pr-3 py-3 bg-[#0B1020] border border-[#24304A] rounded-xl text-sm text-white outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/10 transition" />
-//           </div>
-//           <button type="submit" disabled={authLoading} className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-violet-500 text-white rounded-xl font-bold hover:opacity-90 active:scale-[0.98] transition shadow-lg shadow-cyan-500/10">
-//             {authLoading ? "Sending..." : "Generate Recovery Code"}
-//           </button>
-//         </form>
-//       );
-//     }
-
-//     // 2. OTP STEP
-//     if (forgotPasswordStep === 'otp') {
-//       return (
-//         <form onSubmit={(e) => { e.preventDefault(); dispatch(setForgotPasswordStep('reset')); }} className="space-y-4">
-//           <div className="relative">
-//             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-//             <input type="text" required maxLength={6} placeholder="6-digit code" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-//               className="w-full pl-10 pr-3 py-3 bg-[#0B1020] border border-[#24304A] rounded-xl text-center font-mono tracking-widest text-white outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/10 transition" />
-//           </div>
-//           <button type="submit" disabled={otp.length !== 6} className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-violet-500 text-white rounded-xl font-bold hover:opacity-90 active:scale-[0.98] transition">Verify Code</button>
-//         </form>
-//       );
-//     }
-
-//     // 3. RESET STEP
-//     if (forgotPasswordStep === 'reset') {
-//       return (
-//         <form onSubmit={(e) => { e.preventDefault(); dispatch(resetPasswordThunk({ email: recoveryEmail, otp_code: otp, new_password: password })); }} className="space-y-4">
-//           <div className="relative">
-//             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-//             <input type="password" required minLength={8} placeholder="New Password (min 8 chars)" value={password} onChange={e => setPassword(e.target.value)}
-//               className="w-full pl-10 pr-3 py-3 bg-[#0B1020] border border-[#24304A] rounded-xl text-sm text-white outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/10 transition" />
-//           </div>
-//           <button type="submit" disabled={authLoading} className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-violet-500 text-white rounded-xl font-bold hover:opacity-90 active:scale-[0.98] transition">Set New Password</button>
-//         </form>
-//       );
-//     }
-
-//     // 4. SUCCESS STEP
-//     return (
-//       <div className="text-center space-y-4">
-//         <div className="flex justify-center"><CheckCircle size={48} className="text-emerald-500" /></div>
-//         <p className="text-slate-400 text-sm">Your password has been reset successfully.</p>
-//         <button onClick={() => { dispatch(setForgotPasswordStep('email')); navigate('/login'); }} className="w-full py-3 bg-[#1F2A44] text-white rounded-xl font-semibold hover:bg-[#2A3755] transition">Go to Sign In</button>
-//       </div>
-//     );
-//   };
-
-//   return (
-//     <div className="min-h-screen bg-[#152244] text-white flex items-center justify-center px-4">
-//       {/* BACKGROUND GLOW */}
-//        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-//   {/* Cyan Glow - Top Left - Reduced intensity */}
-//   <div className="absolute top-[-5%] left-[-5%] w-[35vw] h-[35vw] max-w-[400px] max-h-[400px] bg-cyan-500 rounded-full blur-[100px] opacity-15" />
-  
-//   {/* Violet Glow - Bottom Right - Reduced intensity */}
-//   <div className="absolute bottom-[-5%] right-[-5%] w-[35vw] h-[35vw] max-w-[400px] max-h-[400px] bg-violet-600 rounded-full blur-[100px] opacity-15" />
-// </div>
-
-//       <div className="relative z-10 w-full max-w-md">
-//         <Link to="/login" className="inline-flex items-center gap-2 text-sm text-slate-400 mb-6 hover:text-white transition"><ArrowLeft size={16} /> Back to Sign In</Link>
-        
-//         <div className="mb-6">
-//           <h1 className="text-3xl font-bold tracking-tight">Recover Account</h1>
-//           <p className="text-sm text-slate-400 mt-1">Let's get you back into your workspace.</p>
-//         </div>
-
-//         <div className="bg-[#0E1424] border border-[#1F2A44] rounded-2xl p-6 shadow-2xl shadow-black/40">
-//           {renderContent()}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { forgotPasswordThunk, resetPasswordThunk } from '../store/authThunks';
+import { forgotPasswordThunk, resetPasswordThunk, resendRecoveryOtpThunk, verifyRecoveryOtpThunk } from '../store/authThunks';
 import { setForgotPasswordStep } from '../store/authSlice';
 import { ArrowLeft, Mail, KeyRound, CheckCircle, Lock, Eye, EyeOff } from 'lucide-react';
-
 export default function ForgotPassword() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { forgotPasswordStep, authLoading, recoveryEmail } = useSelector((state) => state.auth);
-
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
+  const [otp, setOtp] = useState(() => sessionStorage.getItem("forgot_password_otp") || '');
+
+  useEffect(() => {
+    sessionStorage.setItem("forgot_password_otp", otp);
+  }, [otp]);
+
+  useEffect(() => {
+    if (forgotPasswordStep === 'done') {
+      sessionStorage.removeItem("forgot_password_otp");
+    }
+  }, [forgotPasswordStep]);
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
+  // OTP Resend Timer Logic
+  const [resendTimer, setResendTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  useEffect(() => {
+    let interval;
+    if (forgotPasswordStep === 'otp' && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (resendTimer === 0) {
+      setCanResend(true);
+    }
+    return () => clearInterval(interval);
+  }, [forgotPasswordStep, resendTimer]);
+  const handleResendOtp = () => {
+    if (!canResend) return;
+    dispatch(resendRecoveryOtpThunk(recoveryEmail));
+    setResendTimer(60);
+    setCanResend(false);
+  };
   const handlePasswordChange = (val) => {
     setPassword(val);
     // Enforces: Min 8 chars, 1 uppercase, 1 digit, 1 special character
@@ -125,7 +53,6 @@ export default function ForgotPassword() {
       setPasswordError("");
     }
   };
-
   const renderContent = () => {
     if (forgotPasswordStep === 'email') {
       return (
@@ -141,20 +68,45 @@ export default function ForgotPassword() {
         </form>
       );
     }
-
     if (forgotPasswordStep === 'otp') {
       return (
-        <form onSubmit={(e) => { e.preventDefault(); dispatch(setForgotPasswordStep('reset')); }} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); dispatch(verifyRecoveryOtpThunk(recoveryEmail, otp)); }} className="space-y-4">
+          <p className="text-xs text-slate-400 leading-relaxed text-center mb-2">
+            A 6-digit recovery code has been sent to <span className="text-cyan-400 font-semibold">{recoveryEmail}</span>. 
+            {" "}(<button 
+              type="button"
+              onClick={() => dispatch(setForgotPasswordStep('email'))} 
+              className="text-cyan-400 hover:text-cyan-300 underline font-semibold cursor-pointer"
+            >
+              Edit
+            </button>). 
+            The code remains valid for 5 minutes.
+          </p>
           <div className="relative">
             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input type="text" required maxLength={6} placeholder="6-digit code" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
               className="w-full pl-10 pr-3 py-3 bg-[#0B1020] border border-[#24304A] rounded-xl text-center font-mono tracking-widest text-white outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/10 transition" />
           </div>
-          <button type="submit" disabled={otp.length !== 6} className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-violet-500 text-white rounded-xl font-bold hover:opacity-90 active:scale-[0.98] transition">Verify Code</button>
+          <div className="text-center text-xs py-1">
+            <button
+              type="button"
+              disabled={!canResend}
+              onClick={handleResendOtp}
+              className={`font-semibold transition-all ${
+                canResend 
+                  ? "text-cyan-400 hover:text-cyan-300 underline cursor-pointer" 
+                  : "text-slate-500 cursor-not-allowed"
+              }`}
+            >
+              {canResend ? "Resend Recovery Code" : `Resend code in ${resendTimer}s`}
+            </button>
+          </div>
+          <button type="submit" disabled={otp.length !== 6 || authLoading} className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-violet-500 text-white rounded-xl font-bold hover:opacity-90 active:scale-[0.98] transition">
+            {authLoading ? "Verifying..." : "Verify Code"}
+          </button>
         </form>
       );
     }
-
     if (forgotPasswordStep === 'reset') {
       return (
         <form onSubmit={(e) => { 
@@ -181,7 +133,6 @@ export default function ForgotPassword() {
         </form>
       );
     }
-
     return (
       <div className="text-center space-y-4">
         <div className="flex justify-center"><CheckCircle size={48} className="text-emerald-500" /></div>
@@ -190,7 +141,6 @@ export default function ForgotPassword() {
       </div>
     );
   };
-
   return (
     <div className="min-h-screen bg-[#152244] text-[#E2E8F0] flex items-center justify-center px-4">
       {/* BACKGROUND GLOW */}
@@ -198,7 +148,6 @@ export default function ForgotPassword() {
         <div className="absolute top-[-5%] left-[-5%] w-[35vw] h-[35vw] max-w-[400px] max-h-[400px] bg-cyan-500 rounded-full blur-[100px] opacity-15" />
         <div className="absolute bottom-[-5%] right-[-5%] w-[35vw] h-[35vw] max-w-[400px] max-h-[400px] bg-violet-600 rounded-full blur-[100px] opacity-15" />
       </div>
-
       <div className="relative z-10 w-full max-w-md">
         <Link to="/login" className="inline-flex items-center gap-2 text-sm text-slate-400 mb-6 hover:text-white transition"><ArrowLeft size={16} /> Back to Sign In</Link>
         
@@ -206,7 +155,6 @@ export default function ForgotPassword() {
           <h1 className="text-3xl font-bold tracking-tight">Recover Account</h1>
           <p className="text-sm text-slate-400 mt-1">Let's get you back into your workspace.</p>
         </div>
-
         <div className="bg-[#0E1424] border border-[#1F2A44] rounded-2xl p-6 shadow-2xl shadow-black/40">
           {renderContent()}
         </div>

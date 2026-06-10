@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useCreateIdea } from "../api/ideasApi";
 import Stepper from "../components/Stepper";
 import TermsAndConditions from "../components/TermsAndConditions";
@@ -6,23 +6,90 @@ import IdeaInformation from "../components/IdeaInformation";
 import IdeaResourceLinks from "../components/IdeaResourceLinks";
 import IdeaDocumentUpload from "../components/IdeaDocumentUpload";
 import ReviewAndSubmit from "../components/ReviewAndSubmit";
+import localforage from "localforage";
 
 export default function SubmitIdea() {
   const { mutate: createIdea, isPending: submitting } = useCreateIdea();
 
-  const [currentStep, setCurrentStep] = useState(1);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [currentStep, setCurrentStep] = useState(() => {
+    const saved = sessionStorage.getItem("idea_currentStep");
+    return saved ? parseInt(saved, 10) : 1;
+  });
+  const [acceptedTerms, setAcceptedTerms] = useState(() => {
+    const saved = sessionStorage.getItem("idea_acceptedTerms");
+    return saved === "true";
+  });
   const [files, setFiles] = useState([]);
   const [successData, setSuccessData] = useState(null);
   const [error, setError] = useState("");
 
-  const [formData, setFormData] = useState({
-    title: "", category: "", current_stage: "", problem_statement: "",
-    proposed_solution: "", target_audience: "", market_opportunity: "",
-    competitive_advantage: "", revenue_model: "", business_impact: "",
-    scalability: "", tech_requirements: "", github_link: "",
-    figma_link: "", drive_link: "", demo_url: "",
+  const [formData, setFormData] = useState(() => {
+    const saved = sessionStorage.getItem("idea_formData");
+    return saved ? JSON.parse(saved) : {
+      title: "", category: "", current_stage: "", problem_statement: "",
+      proposed_solution: "", target_audience: "", market_opportunity: "",
+      competitive_advantage: "", revenue_model: "", business_impact: "",
+      scalability: "", tech_requirements: "", github_link: "",
+      figma_link: "", drive_link: "", demo_url: "",
+    };
   });
+
+  const [initialFilesLoadDone, setInitialFilesLoadDone] = useState(false);
+
+  // Sync currentStep to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem("idea_currentStep", currentStep.toString());
+  }, [currentStep]);
+
+  // Sync acceptedTerms to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem("idea_acceptedTerms", acceptedTerms.toString());
+  }, [acceptedTerms]);
+
+  // Sync formData to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem("idea_formData", JSON.stringify(formData));
+  }, [formData]);
+
+  // Sync files to localforage
+  useEffect(() => {
+    if (!initialFilesLoadDone) return;
+    if (files && files.length > 0) {
+      localforage.setItem("idea_files", files);
+    } else {
+      localforage.removeItem("idea_files");
+    }
+  }, [files, initialFilesLoadDone]);
+
+  // Load saved files on mount
+  useEffect(() => {
+    const loadSavedFiles = async () => {
+      // If there's no active step in sessionStorage, it's a fresh tab session. Clear orphaned files.
+      const hasSession = sessionStorage.getItem("idea_currentStep");
+      if (!hasSession) {
+        await localforage.removeItem("idea_files");
+        setInitialFilesLoadDone(true);
+        return;
+      }
+
+      const savedFiles = await localforage.getItem("idea_files");
+      if (savedFiles) {
+        setFiles(savedFiles);
+      }
+      setInitialFilesLoadDone(true);
+    };
+    loadSavedFiles();
+  }, []);
+
+  // Cleanup on success
+  useEffect(() => {
+    if (successData) {
+      sessionStorage.removeItem("idea_currentStep");
+      sessionStorage.removeItem("idea_acceptedTerms");
+      sessionStorage.removeItem("idea_formData");
+      localforage.removeItem("idea_files");
+    }
+  }, [successData]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;

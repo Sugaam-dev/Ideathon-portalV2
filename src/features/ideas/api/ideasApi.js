@@ -104,7 +104,13 @@ export const useCreateIdea = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ ideaPayload, files }) => {
-      const { data: idea } = await apiClient.post('/api/ideas', ideaPayload);
+      const idempotencyKey = typeof crypto.randomUUID === 'function' 
+        ? crypto.randomUUID() 
+        : Math.random().toString(36).substring(2) + Date.now().toString(36);
+        
+      const { data: idea } = await apiClient.post('/api/ideas', ideaPayload, {
+        headers: { 'X-Idempotency-Key': idempotencyKey }
+      });
       if (files?.length > 0) {
         for (const file of files) {
           const formData = new FormData();
@@ -141,7 +147,9 @@ export const useDownloadAttachment = () => {
     },
     onError: (err) => {
       toast.error('Failed to download document.');
-      console.error(err);
+      if (import.meta.env.DEV) {
+        console.error(err);
+      }
     }
   });
 };
@@ -180,7 +188,9 @@ export const useDownloadUserResume = () => {
     },
     onError: (err) => {
       toast.error('Failed to download resume.');
-      console.error(err);
+      if (import.meta.env.DEV) {
+        console.error(err);
+      }
     }
   });
 };
