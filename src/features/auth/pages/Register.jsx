@@ -136,9 +136,10 @@ export default function Register() {
     if (name === "name" && !value.trim()) error = "Full name is required";
     if (name === "email" && !/\S+@\S+\.\S+/.test(value)) error = "Invalid email";
     
-    if (name === "phone" && !/^\+?[0-9]{10,20}$/.test(value)) 
-        error = "Enter a valid phone number (10-20 digits)";
-    
+    // if (name === "phone" && !/^\+?[0-9]{10,20}$/.test(value)) 
+    //     error = "Enter a valid phone number (10-20 digits)";
+    if (name === "phone" && !/^[6-9]\d{9}$/.test(value))
+    error = "Enter a valid mobile number";
     if (name === "password") {
       const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
       if (!regex.test(value)) 
