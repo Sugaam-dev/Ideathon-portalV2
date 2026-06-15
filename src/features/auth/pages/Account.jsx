@@ -98,11 +98,16 @@ export default function Account() {
     const errors = {};
 
     // 1. Phone Validation (Must be exactly 10 digits)
+    // if (!profileForm.phone.trim()) {
+    //   errors.phone = "Phone number is required";
+    // } else if (!/^[0-9]{10}$/.test(profileForm.phone)) {
+    //   errors.phone = "Provide a valid 10-digit number (digits only)";
+    // }
     if (!profileForm.phone.trim()) {
-      errors.phone = "Phone number is required";
-    } else if (!/^[0-9]{10}$/.test(profileForm.phone)) {
-      errors.phone = "Provide a valid 10-digit number (digits only)";
-    }
+  errors.phone = "Phone number is required";
+} else if (!/^[0-9]{10}$/.test(profileForm.phone)) {
+  errors.phone = "Provide a valid 10-digit number (digits only)";
+}
     
     // 2. Organization Validation (Mandatory)
     if (!profileForm.organization.trim()) {
