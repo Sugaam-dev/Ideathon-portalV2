@@ -93,36 +93,42 @@ export default function Account() {
     dispatch(updateProfileThunk(formData, navigate));
   };
 
+  const validateField = (name, value) => {
+    let error = "";
+    if (name === "phone") {
+      if (!value.trim()) {
+        error = "Phone number is required";
+      } else if (!/^[6-9]\d{9}$/.test(value)) {
+        error = "Enter a valid 10-digit mobile number starting with 6-9";
+      }
+    }
+    if (name === "organization" && !value.trim()) {
+      error = "Organization is required";
+    }
+    if (name === "department" && !value.trim()) {
+      error = "Department is required";
+    }
+    if (name === "linkedin" && value.trim()) {
+      if (!value.trim().startsWith("http://") && !value.trim().startsWith("https://") && !value.trim().startsWith("www.linkedin.com")) {
+        error = "URL must begin with http://, https://, or www.linkedin.com";
+      }
+    }
+    return error;
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setFormErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+  };
+
   const handleProfileSubmit = (e) => {
     e.preventDefault();
     const errors = {};
 
-    // 1. Phone Validation (Must be exactly 10 digits)
-    // if (!profileForm.phone.trim()) {
-    //   errors.phone = "Phone number is required";
-    // } else if (!/^[0-9]{10}$/.test(profileForm.phone)) {
-    //   errors.phone = "Provide a valid 10-digit number (digits only)";
-    // }
-    if (!profileForm.phone.trim()) {
-  errors.phone = "Phone number is required";
-} else if (!/^[0-9]{10}$/.test(profileForm.phone)) {
-  errors.phone = "Provide a valid 10-digit number (digits only)";
-}
-    
-    // 2. Organization Validation (Mandatory)
-    if (!profileForm.organization.trim()) {
-      errors.organization = "Organization is required";
-    }
-
-    // 3. Department Validation (Mandatory)
-    if (!profileForm.department.trim()) {
-      errors.department = "Department is required";
-    }
-    
-    // 4. Optional LinkedIn URL Format validation
-    if (profileForm.linkedin.trim() && !profileForm.linkedin.trim().startsWith("http://") && !profileForm.linkedin.trim().startsWith("https://") && !profileForm.linkedin.trim().startsWith("www.linkedin.com")) {
-      errors.linkedin = "URL must begin with http://, https://, or www.linkedin.com";
-    }
+    Object.keys(profileForm).forEach((key) => {
+      const err = validateField(key, profileForm[key]);
+      if (err) errors[key] = err;
+    });
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -274,11 +280,17 @@ export default function Account() {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Phone Number *</label>
                     <input
                       type="text"
+                      name="phone"
                       maxLength={10}
                       required
                       placeholder="10-digit number"
                       value={profileForm.phone}
-                      onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value.replace(/[^0-9]/g, "") })}
+                      onChange={(e) => {
+                        const cleanVal = e.target.value.replace(/[^0-9]/g, "");
+                        setProfileForm({ ...profileForm, phone: cleanVal });
+                        setFormErrors((prev) => ({ ...prev, phone: validateField("phone", cleanVal) }));
+                      }}
+                      onBlur={handleBlur}
                       className="w-full bg-[#070A12] border border-white/10 px-3 py-2.5 rounded-xl text-sm text-white focus:border-cyan-400 outline-none"
                     />
                     {formErrors.phone && <p className="text-[10px] text-red-400 mt-1">{formErrors.phone}</p>}
@@ -288,10 +300,15 @@ export default function Account() {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Organization *</label>
                     <input
                       type="text"
+                      name="organization"
                       required
                       placeholder="Your organization"
                       value={profileForm.organization}
-                      onChange={(e) => setProfileForm({ ...profileForm, organization: e.target.value })}
+                      onChange={(e) => {
+                        setProfileForm({ ...profileForm, organization: e.target.value });
+                        setFormErrors((prev) => ({ ...prev, organization: validateField("organization", e.target.value) }));
+                      }}
+                      onBlur={handleBlur}
                       className="w-full bg-[#070A12] border border-white/10 px-3 py-2.5 rounded-xl text-sm text-white focus:border-cyan-400 outline-none"
                     />
                     {formErrors.organization && <p className="text-[10px] text-red-400 mt-1">{formErrors.organization}</p>}
@@ -301,10 +318,15 @@ export default function Account() {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Department *</label>
                     <input
                       type="text"
+                      name="department"
                       required
                       placeholder="Your department"
                       value={profileForm.department}
-                      onChange={(e) => setProfileForm({ ...profileForm, department: e.target.value })}
+                      onChange={(e) => {
+                        setProfileForm({ ...profileForm, department: e.target.value });
+                        setFormErrors((prev) => ({ ...prev, department: validateField("department", e.target.value) }));
+                      }}
+                      onBlur={handleBlur}
                       className="w-full bg-[#070A12] border border-white/10 px-3 py-2.5 rounded-xl text-sm text-white focus:border-cyan-400 outline-none"
                     />
                     {formErrors.department && <p className="text-[10px] text-red-400 mt-1">{formErrors.department}</p>}
@@ -314,9 +336,14 @@ export default function Account() {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">LinkedIn URL (Optional)</label>
                     <input
                       type="text"
+                      name="linkedin"
                       placeholder="https://www.linkedin.com/in/username"
                       value={profileForm.linkedin}
-                      onChange={(e) => setProfileForm({ ...profileForm, linkedin: e.target.value })}
+                      onChange={(e) => {
+                        setProfileForm({ ...profileForm, linkedin: e.target.value });
+                        setFormErrors((prev) => ({ ...prev, linkedin: validateField("linkedin", e.target.value) }));
+                      }}
+                      onBlur={handleBlur}
                       className="w-full bg-[#070A12] border border-white/10 px-3 py-2.5 rounded-xl text-sm text-white focus:border-cyan-400 outline-none"
                     />
                     {formErrors.linkedin && <p className="text-[10px] text-red-400 mt-1">{formErrors.linkedin}</p>}

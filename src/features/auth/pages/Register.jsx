@@ -264,7 +264,7 @@ export default function Register() {
                 {[
                   { label: "Full Name *", key: "name" },
                   { label: "Email Address *", key: "email" },
-                  { label: "Phone Number *", key: "phone", maxLength: 20 },
+                  { label: "Phone Number *", key: "phone", maxLength: 10 },
                   { label: "Organization", key: "organization" },
                   { label: "Department", key: "department" },
                   { label: "LinkedIn URL", key: "linkedin", full: true },
