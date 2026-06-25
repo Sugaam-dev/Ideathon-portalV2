@@ -75,7 +75,7 @@ const TERMS = [
 
 export default function TermsAndConditions({ acceptedTerms, setAcceptedTerms }) {
   const scrollRef = useRef(null);
-  const [hasScrolledToEnd, setHasScrolledToEnd] = useState(false);
+  const [hasScrolledToEnd, setHasScrolledToEnd] = useState(() => acceptedTerms);
 
   const handleScroll = () => {
     const el = scrollRef.current;
@@ -91,7 +91,7 @@ export default function TermsAndConditions({ acceptedTerms, setAcceptedTerms }) 
   }, []);
 
   return (
-    <div className="bg-[#0E1424] max-w-6xl mx-auto border border-[#1F2A44] rounded-2xl p-6 md:p-8 shadow-2xl shadow-black/40 flex flex-col">
+    <div className="bg-[#0E1424] max-w-6xl mx-auto border border-[#1F2A44] rounded-2xl p-4 md:p-8 shadow-2xl shadow-black/40 flex flex-col">
       {/* <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-white">Terms & Conditions</h2>
         {!hasScrolledToEnd && (
@@ -105,7 +105,6 @@ export default function TermsAndConditions({ acceptedTerms, setAcceptedTerms }) 
         )}
       </div> */}
 
-      <p className="text-sm text-slate-400 mb-5 leading-relaxed">{INTRO}</p>
 
       {/* Internally scrollable terms box — fixed height so the page itself doesn't need to scroll */}
       <style>{`
@@ -118,6 +117,8 @@ export default function TermsAndConditions({ acceptedTerms, setAcceptedTerms }) 
         className="terms-scroll space-y-5 text-slate-400 text-sm overflow-y-auto"
         style={{ maxHeight: '320px' }}
       >
+        
+      <p className="text-sm text-slate-400 mb-5 leading-relaxed">{INTRO}</p>
         {TERMS.map((item, i) => (
           <div key={i}>
             <p className="text-slate-200 font-semibold mb-1">{item.title}</p>
@@ -162,9 +163,9 @@ export default function TermsAndConditions({ acceptedTerms, setAcceptedTerms }) 
           </span>
         </label>
         {!hasScrolledToEnd && (
-          <p className="text-xs text-slate-500 mt-2 ml-8">
-            Please scroll through all the terms above before agreeing.
-          </p>
+         <p className="text-xs text-red-400 mt-2 ml-8 font-semibold animate-pulse">
+  Please scroll through all the terms above before agreeing.
+</p>
         )}
       </div>
     </div>
