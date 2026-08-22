@@ -29,9 +29,12 @@ export const useIdeaDetails = (id) => useQuery({
 });
 
 // -- ADMINISTRATIVE USER AUDITING GATEWAYS --
-export const useAdminUsers = () => useQuery({
-  queryKey: ['adminUsers'],
-  queryFn: async () => (await apiClient.get('/api/admin/ideas/users')).data
+export const useAdminUsers = (filters) => useQuery({
+  queryKey: ['adminUsers', filters],
+  queryFn: async () => (await apiClient.get('/api/admin/ideas/users', { params: filters })).data,
+  staleTime: 0,
+  refetchOnMount: true,
+  refetchOnWindowFocus: true
 });
 
 export const useAdminUserDetails = (userId) => useQuery({

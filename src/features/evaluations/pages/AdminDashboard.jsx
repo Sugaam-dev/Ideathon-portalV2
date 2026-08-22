@@ -7,8 +7,9 @@ import AdminUserDetailModal from './AdminUserDetailModal';
 import AdminEmailLogs from './AdminEmailLogs';
 import { 
   Search, BarChart3, Users, Lightbulb, CheckCircle2, ShieldAlert, 
-  Layers, UserCheck, Shield, Award, Mail
+  Layers, UserCheck, Shield, Award, Mail, ChevronLeft, ChevronRight
 } from 'lucide-react';
+
 const STATUS_MAP = {
   'Submitted': 'badge-submitted', 
   'Under Review': 'badge-review',
@@ -17,37 +18,64 @@ const STATUS_MAP = {
   'Incubation Phase': 'badge-incubation',
   'Closed': 'badge-closed'
 };
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('submissions'); // 'submissions' | 'users' | 'email-logs'
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [category, setCategory] = useState('');
+  const [ideasPage, setIdeasPage] = useState(1);
+  const [usersPage, setUsersPage] = useState(1);
   
   // Audited User Detail Modal State
   const [selectedUserId, setSelectedUserId] = useState(null);
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setSearch('');
     setStatus('');
     setCategory('');
+    setIdeasPage(1);
+    setUsersPage(1);
   };
-  const filters = useMemo(() => ({
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setIdeasPage(1);
+    setUsersPage(1);
+  };
+
+  const handleStatusChange = (e) => {
+    setStatus(e.target.value);
+    setIdeasPage(1);
+  };
+
+  const handleCategoryChange = (e) => {
+    setCategory(e.target.value);
+    setIdeasPage(1);
+  };
+
+  const ideaFilters = useMemo(() => ({
+    page: ideasPage,
+    limit: 20,
     search: search.trim() || undefined,
     status: status || undefined,
     category: category || undefined
-  }), [search, status, category]);
+  }), [ideasPage, search, status, category]);
+
+  const userFilters = useMemo(() => ({
+    page: usersPage,
+    limit: 20,
+    search: search.trim() || undefined
+  }), [usersPage, search]);
+
   const { data: stats, isLoading: isStatsLoading } = useAdminStats();
-  const { data: submissions = [], isLoading: isPoolLoading } = useAdminPool(filters);
-  const { data: usersList = [], isLoading: isUsersLoading } = useAdminUsers();
-  // Filtered users search mapping
-  const filteredUsers = useMemo(() => {
-    if (!search.trim()) return usersList;
-    const term = search.toLowerCase();
-    return usersList.filter(u => 
-      u.name.toLowerCase().includes(term) || 
-      u.email.toLowerCase().includes(term)
-    );
-  }, [search, usersList]);
+  const { data: submissionsData, isLoading: isPoolLoading } = useAdminPool(ideaFilters);
+  const { data: usersData, isLoading: isUsersLoading } = useAdminUsers(userFilters);
+
+  const submissions = submissionsData?.results || [];
+  const usersList = usersData?.results || [];
+
   return (
     <div className="w-full max-w-7xl mx-auto px-6 py-8 flex-1 space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -85,6 +113,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
       {/* Analytics Summary Panels */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {isStatsLoading ? [...Array(5)].map((_, i) => <div key={i} className="h-24 bg-slate-100 rounded-2xl animate-pulse" />) : stats && (
@@ -107,6 +136,7 @@ export default function AdminDashboard() {
           </>
         )}
       </div>
+
       {/* Filters */}
       {activeTab !== 'email-logs' && (
         <div className="bg-white border rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center gap-3">
@@ -115,21 +145,21 @@ export default function AdminDashboard() {
             <input 
               type="text" 
               className="form-input pl-9 w-full" 
-              placeholder={activeTab === 'submissions' ? "Search by title, submitter name, or email..." : "Search users by name or email..."} 
+              placeholder={activeTab === 'submissions' ? "Search by title, submitter name, or email..." : "Search users by name, email, department, or organization..."} 
               value={search} 
-              onChange={e => setSearch(e.target.value)} 
+              onChange={handleSearchChange} 
             />
           </div>
           {activeTab === 'submissions' && (
             <>
-              <select className="form-select md:w-44" value={status} onChange={e => setStatus(e.target.value)}>
+              <select className="form-select md:w-44" value={status} onChange={handleStatusChange}>
                 <option value="">All Statuses</option>
                 <option value="Submitted">Submitted</option>
                 <option value="Under Review">Under Review</option>
                 <option value="Shortlisted">Shortlisted</option>
                 <option value="Selected">Selected</option>
               </select>
-              <select className="form-select md:w-44" value={category} onChange={e => setCategory(e.target.value)}>
+              <select className="form-select md:w-44" value={category} onChange={handleCategoryChange}>
                 <option value="">All Categories</option>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -137,53 +167,78 @@ export default function AdminDashboard() {
           )}
         </div>
       )}
+
       {/* VIEW PANEL ROUTER (TABS) */}
       {activeTab === 'submissions' ? (
         /* =======================================
            SUBMISSIONS TABLE (TREAT IDEAS)
            ======================================= */
-        <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
-          {isPoolLoading ? (
-            <div className="p-16 flex justify-center"><div className="w-8 h-8 border-4 border-slate-900 border-t-transparent rounded-full animate-spin" /></div>
-          ) : submissions.length === 0 ? (
-            <div className="p-16 text-center text-slate-400 font-medium text-sm">No submissions match the query.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
-                    <th className="p-4">ID</th>
-                    <th className="p-4">Title</th>
-                    <th className="p-4">Submitter</th>
-                    <th className="p-4">Category</th>
-                    <th className="p-4 text-center">Score</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4">Date</th>
-                    <th className="p-4"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {submissions.map((sub) => (
-                    <tr key={`${sub.id}-${sub.evaluation_score}`} className="hover:bg-slate-50/40 transition-colors">
-                      <td className="p-4 font-mono text-xs text-slate-400">#{sub.submitter_order_number}</td>
-                      <td className="p-4 font-semibold text-slate-800 truncate max-w-[200px]">{sub.title}</td>
-                      <td className="p-4">
-                        <div className="font-medium text-slate-700">{sub.submitter_name}</div>
-                        <div className="text-[11px] text-slate-400">{sub.submitter_email}</div>
-                      </td>
-                      <td className="p-4 text-xs text-slate-500">{sub.category}</td>
-                      <td className="p-4 text-center font-bold text-amber-600 text-xs">
-                        {sub.evaluation_score != null ? sub.evaluation_score.toFixed(1) : '—'}
-                      </td>
-                      <td className="p-4"><span className={`badge ${STATUS_MAP[sub.status] || 'badge-review'}`}>{sub.status}</span></td>
-                      <td className="p-4 text-xs text-slate-400">{formatDate(sub.submitted_at)}</td>
-                      <td className="p-4 text-right">
-                        <Link to={`/admin/ideas/${sub.id}`} className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-slate-900 text-white rounded-lg">Review</Link>
-                      </td>
+        <div className="space-y-4">
+          <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
+            {isPoolLoading ? (
+              <div className="p-16 flex justify-center"><div className="w-8 h-8 border-4 border-slate-900 border-t-transparent rounded-full animate-spin" /></div>
+            ) : submissions.length === 0 ? (
+              <div className="p-16 text-center text-slate-400 font-medium text-sm">No submissions match the query.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+                      <th className="p-4">ID</th>
+                      <th className="p-4">Title</th>
+                      <th className="p-4">Submitter</th>
+                      <th className="p-4">Category</th>
+                      <th className="p-4 text-center">Score</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4">Date</th>
+                      <th className="p-4"></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-sm">
+                    {submissions.map((sub) => (
+                      <tr key={`${sub.id}-${sub.evaluation_score}`} className="hover:bg-slate-50/40 transition-colors">
+                        <td className="p-4 font-mono text-xs text-slate-400">#{sub.submitter_order_number}</td>
+                        <td className="p-4 font-semibold text-slate-800 truncate max-w-[200px]">{sub.title}</td>
+                        <td className="p-4">
+                          <div className="font-medium text-slate-700">{sub.submitter_name}</div>
+                          <div className="text-[11px] text-slate-400">{sub.submitter_email}</div>
+                        </td>
+                        <td className="p-4 text-xs text-slate-500">{sub.category}</td>
+                        <td className="p-4 text-center font-bold text-amber-600 text-xs">
+                          {sub.evaluation_score != null ? sub.evaluation_score.toFixed(1) : '—'}
+                        </td>
+                        <td className="p-4"><span className={`badge ${STATUS_MAP[sub.status] || 'badge-review'}`}>{sub.status}</span></td>
+                        <td className="p-4 text-xs text-slate-400">{formatDate(sub.submitted_at)}</td>
+                        <td className="p-4 text-right">
+                          <Link to={`/admin/ideas/${sub.id}`} className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-slate-900 text-white rounded-lg">Review</Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          {/* Pagination Controls for Submissions */}
+          {submissionsData && submissionsData.pages > 1 && (
+            <div className="flex items-center justify-between bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+              <button
+                disabled={ideasPage <= 1}
+                onClick={() => setIdeasPage(prev => Math.max(1, prev - 1))}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 disabled:opacity-50 disabled:pointer-events-none transition-all"
+              >
+                <ChevronLeft size={14} /> Previous
+              </button>
+              <span className="text-xs text-slate-500 font-medium">
+                Page {ideasPage} of {submissionsData.pages} ({submissionsData.total} submissions)
+              </span>
+              <button
+                disabled={ideasPage >= submissionsData.pages}
+                onClick={() => setIdeasPage(prev => Math.min(submissionsData.pages, prev + 1))}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 disabled:opacity-50 disabled:pointer-events-none transition-all"
+              >
+                Next <ChevronRight size={14} />
+              </button>
             </div>
           )}
         </div>
@@ -191,65 +246,89 @@ export default function AdminDashboard() {
         /* =======================================
            USER ACCOUNTS TABLE (AUDIT USERS)
            ======================================= */
-        <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
-          {isUsersLoading ? (
-            <div className="p-16 flex justify-center"><div className="w-8 h-8 border-4 border-slate-900 border-t-transparent rounded-full animate-spin" /></div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="p-16 text-center text-slate-400 font-medium text-sm">No user accounts found.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
-                    <th className="p-4">User Details</th>
-                    <th className="p-4">Access Role</th>
-                    <th className="p-4 text-center">Submissions</th>
-                    <th className="p-4">Profile Verification</th>
-                    <th className="p-4">Registered Date</th>
-                    <th className="p-4"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {filteredUsers.map((account) => (
-                    <tr key={account.id} className="hover:bg-slate-50/40 transition-colors">
-                      <td className="p-4">
-                        <div className="font-semibold text-slate-800">{account.name}</div>
-                        <div className="text-xs text-slate-400">{account.email}</div>
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          account.role === 'ADMIN' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-                          account.role === 'JURY' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' :
-                          'bg-slate-50 text-slate-600 border border-slate-100'
-                        }`}>
-                          {account.role === 'ADMIN' ? <Shield size={10} /> : account.role === 'JURY' ? <Award size={10} /> : <Users size={10} />}
-                          {account.role}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center font-bold text-slate-700">
-                        {account.ideas_count}
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          account.is_profile_complete ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                        }`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${account.is_profile_complete ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                          {account.is_profile_complete ? 'Verified' : 'Pending OAuth Setup'}
-                        </span>
-                      </td>
-                      <td className="p-4 text-xs text-slate-400">{formatDate(account.created_at)}</td>
-                      <td className="p-4 text-right">
-                        <button 
-                          onClick={() => setSelectedUserId(account.id)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-slate-900 text-white rounded-lg"
-                        >
-                          View Account
-                        </button>
-                      </td>
+        <div className="space-y-4">
+          <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
+            {isUsersLoading ? (
+              <div className="p-16 flex justify-center"><div className="w-8 h-8 border-4 border-slate-900 border-t-transparent rounded-full animate-spin" /></div>
+            ) : usersList.length === 0 ? (
+              <div className="p-16 text-center text-slate-400 font-medium text-sm">No user accounts found.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+                      <th className="p-4">User Details</th>
+                      <th className="p-4">Access Role</th>
+                      <th className="p-4 text-center">Submissions</th>
+                      <th className="p-4">Profile Verification</th>
+                      <th className="p-4">Registered Date</th>
+                      <th className="p-4"></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-sm">
+                    {usersList.map((account) => (
+                      <tr key={account.id} className="hover:bg-slate-50/40 transition-colors">
+                        <td className="p-4">
+                          <div className="font-semibold text-slate-800">{account.name}</div>
+                          <div className="text-xs text-slate-400">{account.email}</div>
+                        </td>
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            account.role === 'ADMIN' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                            account.role === 'JURY' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' :
+                            'bg-slate-50 text-slate-600 border border-slate-100'
+                          }`}>
+                            {account.role === 'ADMIN' ? <Shield size={10} /> : account.role === 'JURY' ? <Award size={10} /> : <Users size={10} />}
+                            {account.role}
+                          </span>
+                        </td>
+                        <td className="p-4 text-center font-bold text-slate-700">
+                          {account.ideas_count}
+                        </td>
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            account.is_profile_complete ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                          }`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${account.is_profile_complete ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                            {account.is_profile_complete ? 'Verified' : 'Pending OAuth Setup'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-xs text-slate-400">{formatDate(account.created_at)}</td>
+                        <td className="p-4 text-right">
+                          <button 
+                            onClick={() => setSelectedUserId(account.id)}
+                            className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-slate-900 text-white rounded-lg"
+                          >
+                            View Account
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          {/* Pagination Controls for User Accounts */}
+          {usersData && usersData.pages > 1 && (
+            <div className="flex items-center justify-between bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+              <button
+                disabled={usersPage <= 1}
+                onClick={() => setUsersPage(prev => Math.max(1, prev - 1))}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 disabled:opacity-50 disabled:pointer-events-none transition-all"
+              >
+                <ChevronLeft size={14} /> Previous
+              </button>
+              <span className="text-xs text-slate-500 font-medium">
+                Page {usersPage} of {usersData.pages} ({usersData.total} user accounts)
+              </span>
+              <button
+                disabled={usersPage >= usersData.pages}
+                onClick={() => setUsersPage(prev => Math.min(usersData.pages, prev + 1))}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 disabled:opacity-50 disabled:pointer-events-none transition-all"
+              >
+                Next <ChevronRight size={14} />
+              </button>
             </div>
           )}
         </div>
@@ -259,6 +338,7 @@ export default function AdminDashboard() {
            ======================================= */
         <AdminEmailLogs />
       )}
+
       {/* Audit Modal Overlay */}
       {selectedUserId && (
         <AdminUserDetailModal 
@@ -269,3 +349,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
